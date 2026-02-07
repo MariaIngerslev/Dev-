@@ -63,30 +63,54 @@ async function loadLatestPost() {
             ? excerptMatch[1].replace(/<[^>]*>/g, '').slice(0, 120) + '...'
             : '';
 
-        // Render blog card in home view
-        blogList.innerHTML = `
-            <article class="blog-card">
-                <div class="card-body">
-                    <span class="card-tag">Ny</span>
-                    <h2 class="card-title">${post.title}</h2>
-                    <p class="card-excerpt">${excerpt}</p>
-                </div>
-                <div class="card-footer">
-                    <button class="read-more-btn">Læs mere &rarr;</button>
-                </div>
-            </article>`;
+        // Render blog card in home view (DOM API to avoid innerHTML XSS)
+        blogList.textContent = '';
+        const article = document.createElement('article');
+        article.className = 'blog-card';
 
-        // Render full post in post view
-        fullPostContent.innerHTML = `
-            <h2>${post.title}</h2>
-            <time class="post-date">${date}</time>
-            ${post.content}`;
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body';
 
-        // Attach Read More click handler
-        const btnReadMore = blogList.querySelector('.read-more-btn');
-        btnReadMore.addEventListener('click', () => {
-            goToPost();
-        });
+        const tag = document.createElement('span');
+        tag.className = 'card-tag';
+        tag.textContent = 'Ny';
+
+        const cardTitle = document.createElement('h2');
+        cardTitle.className = 'card-title';
+        cardTitle.textContent = post.title;
+
+        const cardExcerpt = document.createElement('p');
+        cardExcerpt.className = 'card-excerpt';
+        cardExcerpt.textContent = excerpt;
+
+        cardBody.append(tag, cardTitle, cardExcerpt);
+
+        const cardFooter = document.createElement('div');
+        cardFooter.className = 'card-footer';
+
+        const btnReadMore = document.createElement('button');
+        btnReadMore.className = 'read-more-btn';
+        btnReadMore.textContent = 'Læs mere \u2192';
+        btnReadMore.addEventListener('click', () => goToPost());
+
+        cardFooter.appendChild(btnReadMore);
+        article.append(cardBody, cardFooter);
+        blogList.appendChild(article);
+
+        // Render full post in post view (title/date via DOM, content is trusted server HTML)
+        fullPostContent.textContent = '';
+
+        const postTitle = document.createElement('h2');
+        postTitle.textContent = post.title;
+
+        const postDate = document.createElement('time');
+        postDate.className = 'post-date';
+        postDate.textContent = date;
+
+        const postBody = document.createElement('div');
+        postBody.innerHTML = post.content;
+
+        fullPostContent.append(postTitle, postDate, postBody);
     } catch (err) {
         console.error('Error loading latest post:', err);
     }
@@ -108,17 +132,25 @@ const feedbackMessage = document.getElementById('feedback-message');
 // --- Comment Rendering ---
 const commentsList = document.getElementById('comments-list');
 
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
 function renderComment(comment) {
     const div = document.createElement('div');
     div.className = 'comment-card';
-    const date = new Date(comment.date).toLocaleString('da-DK');
-    div.innerHTML = `<div class="comment-header"><strong>${escapeHtml(comment.author)}</strong><time>${date}</time></div><p>${escapeHtml(comment.text)}</p>`;
+
+    const header = document.createElement('div');
+    header.className = 'comment-header';
+
+    const strong = document.createElement('strong');
+    strong.textContent = comment.author;
+
+    const time = document.createElement('time');
+    time.textContent = new Date(comment.date).toLocaleString('da-DK');
+
+    header.append(strong, time);
+
+    const p = document.createElement('p');
+    p.textContent = comment.text;
+
+    div.append(header, p);
     return div;
 }
 
