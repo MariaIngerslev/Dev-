@@ -17,7 +17,7 @@ This is a Danish-language blog app with comment URL validation, built as an Expr
 
 **Mongoose models** (`src/models/`):
 - `Post.js` — Schema: `title` (String, required), `content` (String, required), `createdAt` (Date, default now).
-- `Comment.js` — Schema: `content` (String, required), `postId` (ObjectId, ref: 'Post', required), `createdAt` (Date, default now).
+- `Comment.js` — Schema: `name` (String, default: 'Anonym'), `content` (String, required), `postId` (ObjectId, ref: 'Post', required, indexed), `createdAt` (Date, default now).
 
 **Shared utilities and middleware** (`src/utils/`, `src/middleware/`, `src/data/`):
 - `utils/extractUrls.js` — Shared URL extraction via regex, used by both routes and client.
