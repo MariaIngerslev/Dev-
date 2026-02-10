@@ -19,7 +19,7 @@ router.get('/:postId', validateObjectId('postId'), async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const { postId, text } = req.body;
+        const { postId, name, text } = req.body;
 
         if (!postId || !text) {
             return res.status(400).json({
@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
             }
         }
 
-        const comment = await Comment.create({ content: text, postId });
+        const comment = await Comment.create({ name, content: text, postId });
         res.status(201).json(comment);
     } catch (err) {
         res.status(500).json({ error: 'Failed to create comment.' });

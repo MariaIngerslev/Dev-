@@ -230,7 +230,7 @@ function renderCommentEl(comment) {
     const div = el('div', 'comment-card');
     const header = el('div', 'comment-header');
     header.append(
-        el('strong', null, comment.author || 'Anonym'),
+        el('strong', null, comment.name || 'Anonym'),
         el('time', null, new Date(comment.createdAt).toLocaleString('da-DK'))
     );
     div.append(header, el('p', null, comment.content));
@@ -248,7 +248,7 @@ if (commentForm) {
             return;
         }
 
-        const author = document.getElementById('comment-author').value;
+        const name = document.getElementById('comment-author').value;
         const text = document.getElementById('comment-text').value;
         const email = document.getElementById('comment-email').value;
         const subscribe = document.getElementById('comment-subscribe').checked;
@@ -282,7 +282,7 @@ if (commentForm) {
             const response = await fetch('/api/comments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ postId: currentPostId, author, text, email, subscribe })
+                body: JSON.stringify({ postId: currentPostId, name, text, email, subscribe })
             });
 
             const data = await response.json();
