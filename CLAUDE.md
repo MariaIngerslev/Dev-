@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Danish-language blog app with comment URL validation, built as an Express 5 SPA.
 
-**Backend** (`src/main.js`): Express server entry point. Serves static files from `public/`, parses JSON bodies, connects to MongoDB via Mongoose, seeds initial blog post data, and mounts route modules. Uses async/await startup via `start()`. No route handlers are defined inline — all API logic lives in `src/routes/`.
+**Backend — Composition Root** (`src/main.js`): The application's Composition Root. Its sole responsibility is wiring: serving static files from `public/`, parsing JSON bodies, connecting to MongoDB via Mongoose, seeding initial data, and mounting route modules. No business logic, route handlers, or domain decisions should live here — all API logic belongs in `src/routes/`.
 
 **Mongoose models** (`src/models/`):
 - `Post.js` — Schema: `title` (String, required), `content` (String, required), `createdAt` (Date, default now).
@@ -35,13 +35,25 @@ This is a Danish-language blog app with comment URL validation, built as an Expr
 
 **`public/client.js`**: Implements a custom SPA router using `pushState`/`popstate` with pre-compiled route patterns. Global click delegation intercepts internal `<a>` tags. Uses DocumentFragment for batch DOM updates. Shared helpers: `el()` for DOM element creation, `formatDate()` for Danish locale dates, `extractExcerpt()` for post previews, `createBlogCard()` for home view cards. Handles comment form submission with `postId` from the current route, URL extraction via regex (`extractUrls`), and client-side URL safety checking via `POST /api/validate-urls`. A server-side catch-all route in `main.js` serves `index.html` for all non-API paths to support direct URL access and page refresh.
 
+**Separation of Concerns in `client.js`:** Although all client code resides in a single file, maintain a strict logical separation between **Data Access** (all `fetch` calls and response handling) and **DOM Manipulation** (element creation, rendering, event binding). Keep data-fetching functions pure of DOM side-effects, and keep rendering functions free of network calls. This makes the code easier to reason about, test, and refactor.
+
 **`src/urlvalidator.js`**: Mock URL validator with a Set-based domain blacklist (O(1) lookup) and random safe/unsafe simulation (`UNSAFE_THRESHOLD = 0.3`) for non-blacklisted URLs. Internal `classifyUrl` helper per URL; exports `validateUrls(urls)` returning `[{ url, safe, reason }]`. Hostname matching is case-insensitive.
 
-## Key context
+## Express 5 Best Practices
+
+- Uses Express 5 (not 4) — note API differences (e.g., `req.query` returns a getter, path-to-regexp v8).
+- **Do not wrap route handlers in `try/catch` for standard error passing.** Express 5 natively handles rejected promises from `async` route handlers by forwarding the error to the error-handling middleware. Rely on this built-in behaviour to reduce boilerplate. Only use `try/catch` when you need to handle a specific error locally (e.g., returning a custom 404).
+- Route handlers use `async/await`; let unhandled rejections propagate to Express's error pipeline.
+
+## Coding Standards
+
+- **Language:** UI-facing text is in Danish. All code, variable names, and comments are in English.
+- **Security:** Prefer the `el()` helper for DOM element creation over `innerHTML` to prevent XSS. Never inject unsanitised user input into the DOM.
+- **Clean Code — SRP:** Each function and module should have a single, well-defined responsibility. Extract logic into focused helpers rather than building large, multi-purpose functions.
+- **Clean Code — Naming:** Use descriptive, intention-revealing names for variables, functions, and files. Avoid abbreviations and generic names like `data`, `temp`, or `result` when a more specific name is available.
+
+## Key Context
 
 - Uses CommonJS modules (`"type": "commonjs"` in package.json)
-- Express 5 (not 4) — note API differences (e.g., `req.query` returns a getter, path-to-regexp v8)
 - MongoDB via Mongoose for data persistence; connection string from `MONGODB_URI` env var (falls back to `MONGO_URI`)
 - `.env` file holds the connection string (git-ignored)
-- Route handlers use `async/await` with `try/catch` for error handling
-- UI text is in Danish
